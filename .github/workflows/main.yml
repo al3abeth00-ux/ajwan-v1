@@ -1,40 +1,52 @@
-name: Offline App V4
+name: Auto-Unzip & Build APK
 on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # تحديث أداة جلب الملفات للإصدار 4
       - uses: actions/checkout@v4
 
-      # تحديث أداة النود للإصدار 4 واستخدام نسخة حديثة
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      # تحديث أداة الجافا للإصدار 4
+      - name: Setup Environment
+        uses: actions/setup-node@v4
+        with: {node-version: 20}
+      
       - uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+        with: {java-version: '17', distribution: 'temurin'}
 
-      - name: Install & Build
+      - name: 📦 Unzip & Prepare
+        run: |
+          # هذه الخطوة تبحث عن الملف المضغوط وتفكه
+          if ls *.zip 1> /dev/null 2>&1; then
+            echo "📦 Found ZIP file! Extracting..."
+            unzip -o *.zip -d public_assets
+          else
+            echo "📂 No ZIP found, checking for loose files..."
+            mkdir public_assets
+            cp -r * public_assets/ 2>/dev/null || true
+          fi
+          
+          # التأكد من وجود ملف الموقع
+          if [ -f "public_assets/index.html" ]; then
+            echo "✅ index.html found!"
+          else
+            echo "⚠️ Warning: index.html not found! Check your zip file."
+          fi
+
+      - name: 🛠️ Build APK
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          mkdir public_assets
-          # نسخ الملفات وتجاهل الأخطاء إذا كانت المجلدات موجودة
-          cp -r * public_assets/ 2>/dev/null || true
           
-          # إنشاء تطبيق الأندرويد
+          # إعداد كابستور
           npx cap init App com.ajwan.offline --web-dir public_assets
           npx cap add android
+          
+          # البناء
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      # تحديث أداة الرفع للإصدار 4 (وهي سبب المشكلة الرئيسية)
       - uses: actions/upload-artifact@v4
         with:
-          name: Ajwan-APK
+          name: Ajwan-Final-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
