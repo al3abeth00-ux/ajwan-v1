@@ -1,4 +1,4 @@
-name: Build Offline & Online APK
+name: Pack Offline APK (No Build)
 
 on:
   push:
@@ -11,47 +11,48 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # 1. تجهيز البيئة
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # 2. تثبيت الأدوات اللازمة
-      - name: Install Dependencies
+      # هذه الخطوة الذكية: تقوم بتجميع ملفاتك الجاهزة في مجلد اسمه public
+      # لكي يفهمها النظام، سواء كانت جاهزة أو لا
+      - name: Prepare Offline Files
         run: |
-          npm install
+          mkdir public
+          # ننسخ كل الملفات المهمة إلى مجلد public
+          cp -r * public/ 2>/dev/null || true
+          # نتأكد من وجود ملف index.html
+          if [ -f "public/index.html" ]; then
+            echo "✅ index.html found!"
+          else
+            echo "⚠️ Warning: index.html not found at root. Check your upload."
+          fi
+
+      - name: Install Capacitor
+        run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
-      # 3. التأكد من أن ملفات الموقع جاهزة
-      # نقوم ببناء الموقع لإنتاج مجلد dist الذي يحتوي على النسخة النهائية
-      - name: Build Web Assets
-        run: npm run build
-
-      # 4. إعداد كابستور ليعمل أوفلاين
-      # الأمر السحري هنا هو --web-dir dist
-      # هذا يخبره أن يأخذ الملفات من مجلد dist ويضعها داخل التطبيق
-      - name: Initialize Offline App
+      # هنا نجبره على استخدام مجلد public الذي وضعنا فيه ملفاتك
+      - name: Initialize App
         run: |
-          npx cap init Ajwan com.ajwan.offline --web-dir dist
+          npx cap init Ajwan com.ajwan.offline --web-dir public
           npx cap add android
           npx cap sync android
 
-      # 5. تجهيز الجافا للأندرويد
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # 6. طبخ الـ APK النهائي
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      # 7. تسليم الطلب
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
