@@ -1,60 +1,27 @@
-name: Pack Offline APK (No Build)
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  workflow_dispatch:
-
+name: Offline App
+on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      # هذه الخطوة الذكية: تقوم بتجميع ملفاتك الجاهزة في مجلد اسمه public
-      # لكي يفهمها النظام، سواء كانت جاهزة أو لا
-      - name: Prepare Offline Files
-        run: |
-          mkdir public
-          # ننسخ كل الملفات المهمة إلى مجلد public
-          cp -r * public/ 2>/dev/null || true
-          # نتأكد من وجود ملف index.html
-          if [ -f "public/index.html" ]; then
-            echo "✅ index.html found!"
-          else
-            echo "⚠️ Warning: index.html not found at root. Check your upload."
-          fi
-
-      - name: Install Capacitor
+      - uses: actions/setup-node@v3
+        with: {node-version: 18}
+      - uses: actions/setup-java@v3
+        with: {java-version: '17', distribution: 'temurin'}
+        
+      - name: Install & Build
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
-
-      # هنا نجبره على استخدام مجلد public الذي وضعنا فيه ملفاتك
-      - name: Initialize App
-        run: |
-          npx cap init Ajwan com.ajwan.offline --web-dir public
+          mkdir public_assets
+          cp -r * public_assets/ 2>/dev/null || true
+          npx cap init App com.ajwan.offline --web-dir public_assets
           npx cap add android
-          npx cap sync android
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Build APK
-        run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v3
         with:
-          name: Ajwan-Offline-APK
+          name: Ajwan-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
