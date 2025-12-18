@@ -1,27 +1,40 @@
-name: Offline App
+name: Offline App V4
 on: [push, workflow_dispatch]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with: {node-version: 18}
-      - uses: actions/setup-java@v3
-        with: {java-version: '17', distribution: 'temurin'}
-        
+      # تحديث أداة جلب الملفات للإصدار 4
+      - uses: actions/checkout@v4
+
+      # تحديث أداة النود للإصدار 4 واستخدام نسخة حديثة
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # تحديث أداة الجافا للإصدار 4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
       - name: Install & Build
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
           mkdir public_assets
+          # نسخ الملفات وتجاهل الأخطاء إذا كانت المجلدات موجودة
           cp -r * public_assets/ 2>/dev/null || true
+          
+          # إنشاء تطبيق الأندرويد
           npx cap init App com.ajwan.offline --web-dir public_assets
           npx cap add android
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - uses: actions/upload-artifact@v3
+      # تحديث أداة الرفع للإصدار 4 (وهي سبب المشكلة الرئيسية)
+      - uses: actions/upload-artifact@v4
         with:
           name: Ajwan-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
