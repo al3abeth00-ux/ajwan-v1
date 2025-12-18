@@ -1,0 +1,289 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <base href="./" />
+    <title>نظام إدارة المياه</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        html, body {
+            overscroll-behavior-y: contain; /* Prevents pull-to-refresh */
+            overflow-x: hidden; /* Prevents horizontal scroll */
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            overflow: hidden; /* App handles scrolling internally */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+
+        /* Glassmorphism Classes */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Shine Effect Animation */
+        @keyframes shine {
+            0% { left: -100%; opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { left: 100%; opacity: 0; }
+        }
+        
+        .glass-shine::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.1) 50%, transparent);
+            transform: skewX(-25deg);
+            animation: shine 6s infinite;
+            pointer-events: none;
+        }
+
+        .glass-btn {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+        }
+        .glass-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* CLICK EFFECT: Scale Down & Pulse */
+        .glass-btn:active:not(:disabled) { 
+            transform: scale(0.92) translateY(0);
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
+        }
+
+        /* Ripple Effect */
+        .glass-btn::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0s, height 0s, opacity 0s;
+            pointer-events: none;
+        }
+        .glass-btn:active::after {
+            width: 300px;
+            height: 300px;
+            opacity: 0;
+            transition: width 0.4s ease-out, height 0.4s ease-out, opacity 0.4s ease-out;
+        }
+
+        .glass-btn.active {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: rgba(6, 182, 212, 0.4);
+            color: rgb(103, 232, 249);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.1);
+        }
+
+        .input-glass {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .input-glass:focus {
+            background: rgba(0, 0, 0, 0.3);
+            border-color: rgba(6, 182, 212, 0.5);
+            outline: none;
+        }
+
+        .glass-inner {
+            background: rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+
+        /* Floating Icon Animation (Buoyancy) */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        /* Stagger animations for list items so they don't move in unison */
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+
+        /* Water/Wave Animation for Date Header */
+        @keyframes waveBg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .water-date-container {
+            background: linear-gradient(270deg, rgba(6, 182, 212, 0.1), rgba(59, 130, 246, 0.1), rgba(6, 182, 212, 0.1));
+            background-size: 200% 200%;
+            animation: waveBg 6s ease infinite;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            transition: all 0.1s linear; /* Fast transition for scroll sync */
+        }
+        
+        /* Shimmer Text Effect */
+        .text-shimmer {
+            background: linear-gradient(90deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,1) 50%, rgba(255,255,255,0.8) 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: textShine 3s linear infinite;
+        }
+        @keyframes textShine {
+            to { background-position: 200% center; }
+        }
+
+        /* Light Mode Specific Overrides */
+        body[data-theme='light'] .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        body[data-theme='light'] .glass-btn {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(0,0,0,0.05);
+            color: #1e293b;
+        }
+        body[data-theme='light'] .glass-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.9);
+        }
+        body[data-theme='light'] .input-glass {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0,0,0,0.1);
+            color: #0f172a;
+        }
+        body[data-theme='light'] .input-glass::placeholder { color: #64748b; }
+        
+        /* Light Mode Text Contrasts */
+        body[data-theme='light'] .text-white { color: #1e293b !important; }
+        body[data-theme='light'] .text-white\/50 { color: #64748b !important; }
+        body[data-theme='light'] .text-white\/60 { color: #475569 !important; }
+        body[data-theme='light'] .text-white\/70 { color: #334155 !important; }
+        body[data-theme='light'] .text-white\/80 { color: #1e293b !important; }
+        body[data-theme='light'] .text-white\/30 { color: #94a3b8 !important; }
+        
+        body[data-theme='light'] .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); }
+
+        /* Loading Screen Styles */
+        .loading-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #f0f9ff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .water-drop-loader {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #06b6d4, #2563eb);
+            border-radius: 0 50% 50% 50%;
+            transform: rotate(45deg);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+            animation: dropPulse 1.2s infinite ease-in-out alternate;
+            margin-bottom: 25px;
+        }
+        .loading-text {
+            font-family: 'Tajawal', sans-serif;
+            color: #0e7490;
+            font-size: 1.2rem;
+            font-weight: 700;
+            animation: textFade 1.5s infinite ease-in-out;
+        }
+        @keyframes dropPulse {
+            0% { transform: rotate(45deg) scale(1); opacity: 0.9; }
+            100% { transform: rotate(45deg) scale(1.15); opacity: 1; box-shadow: 0 0 30px rgba(6, 182, 212, 0.6); }
+        }
+        @keyframes textFade {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+    </style>
+<link rel="stylesheet" href="/index.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "react-dom": "https://esm.sh/react-dom@^19.2.3",
+        "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
+        "react-router-dom": "https://esm.sh/react-router-dom@6.22.0?external=react,react-dom",
+        "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
+        "recharts": "https://esm.sh/recharts@^3.5.1",
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
+        "firebase/": "https://esm.sh/firebase@^12.6.0/",
+        "@dnd-kit/core": "https://esm.sh/@dnd-kit/core@6.1.0",
+        "@dnd-kit/sortable": "https://esm.sh/@dnd-kit/sortable@8.0.0",
+        "@dnd-kit/utilities": "https://esm.sh/@dnd-kit/utilities@3.2.2"
+      }
+    }
+    </script>
+  <script type="module" crossorigin src="./assets/index-D3QUOIY4.js"></script>
+</head>
+<body>
+    <div id="root">
+        <div class="loading-wrapper">
+            <div class="water-drop-loader"></div>
+            <div class="loading-text">جاري تشغيل النظام...</div>
+        </div>
+    </div>
+</body>
+</html>
